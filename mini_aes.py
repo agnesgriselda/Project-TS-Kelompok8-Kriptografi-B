@@ -1,6 +1,8 @@
 import streamlit as st
-import csv
 import io
+import secrets
+
+# --- MINI-AES FUNCTION (enkripsi dari kode kamu sebelumnya) ---
 
 S_BOX = {
     0x0: 0xE, 0x1: 0x4, 0x2: 0xD, 0x3: 0x1,
@@ -8,6 +10,8 @@ S_BOX = {
     0x8: 0x3, 0x9: 0xA, 0xA: 0x6, 0xB: 0xC,
     0xC: 0x5, 0xD: 0x9, 0xE: 0x0, 0xF: 0x7
 }
+
+INV_S_BOX = {v: k for k, v in S_BOX.items()}
 
 def int_to_nibbles(val):
     return [(val >> 12) & 0xF, (val >> 8) & 0xF, (val >> 4) & 0xF, val & 0xF]
@@ -18,7 +22,13 @@ def nibbles_to_int(nibs):
 def sub_nibbles(state):
     return [S_BOX[n] for n in state]
 
+def inv_sub_nibbles(state):
+    return [INV_S_BOX[n] for n in state]
+
 def shift_rows(state):
+    return [state[0], state[1], state[3], state[2]]
+
+def inv_shift_rows(state):
     return [state[0], state[1], state[3], state[2]]
 
 def add_round_key(state, round_key):
@@ -46,6 +56,15 @@ def mix_columns(state):
         mul(4, s1) ^ mul(1, s3)
     ]
 
+def inv_mix_columns(state):
+    s0, s1, s2, s3 = state
+    return [
+        mul(9, s0) ^ mul(2, s2),
+        mul(9, s1) ^ mul(2, s3),
+        mul(2, s0) ^ mul(9, s2),
+        mul(2, s1) ^ mul(9, s3)
+    ]
+
 def key_expansion(key):
     k = int_to_nibbles(key)
     w = [0]*6
@@ -61,207 +80,200 @@ def key_expansion(key):
         [w[4], w[5], w[4], w[5]]
     ]
 
-def mini_aes_encrypt(plain_int, key_int):
-    logs = []
+def mini_aes_encrypt_block(plain_int, key_int):
     state = int_to_nibbles(plain_int)
     round_keys = key_expansion(key_int)
 
-    logs.append(f"Initial State: {state}")
+    state = add_round_key(state, round_keys[0])
+
+    state = sub_nibbles(state)
+    state = shift_rows(state)
+    state = mix_columns(state)
+    state = add_round_key(state, round_keys[1])
+
+    state = sub_nibbles(state)
+    state = shift_rows(state)
+    state = mix_columns(state)
+    state = add_round_key(state, round_keys[2])
+
+    state = sub_nibbles(state)
+    state = shift_rows(state)
+    state = add_round_key(state, round_keys[3])
+
+    return nibbles_to_int(state)
+
+def mini_aes_decrypt_block(cipher_int, key_int):
+    state = int_to_nibbles(cipher_int)
+    round_keys = key_expansion(key_int)
+
+    state = add_round_key(state, round_keys[3])
+    state = inv_shift_rows(state)
+    state = inv_sub_nibbles(state)
+
+    state = add_round_key(state, round_keys[2])
+    state = inv_mix_columns(state)
+    state = inv_shift_rows(state)
+    state = inv_sub_nibbles(state)
+
+    state = add_round_key(state, round_keys[1])
+    state = inv_mix_columns(state)
+    state = inv_shift_rows(state)
+    state = inv_sub_nibbles(state)
 
     state = add_round_key(state, round_keys[0])
-    logs.append(f"After Round 0 (AddRoundKey): {state}")
 
-    state = sub_nibbles(state)
-    logs.append(f"After SubNibbles R1: {state}")
-    state = shift_rows(state)
-    logs.append(f"After ShiftRows R1: {state}")
-    state = mix_columns(state)
-    logs.append(f"After MixColumns R1: {state}")
-    state = add_round_key(state, round_keys[1])
-    logs.append(f"After AddRoundKey R1: {state}")
+    return nibbles_to_int(state)
 
-    state = sub_nibbles(state)
-    logs.append(f"After SubNibbles R2: {state}")
-    state = shift_rows(state)
-    logs.append(f"After ShiftRows R2: {state}")
-    state = mix_columns(state)
-    logs.append(f"After MixColumns R2: {state}")
-    state = add_round_key(state, round_keys[2])
-    logs.append(f"After AddRoundKey R2: {state}")
+# --- HELPER ---
 
-    state = sub_nibbles(state)
-    logs.append(f"After SubNibbles R3: {state}")
-    state = shift_rows(state)
-    logs.append(f"After ShiftRows R3: {state}")
-    state = add_round_key(state, round_keys[3])
-    logs.append(f"After AddRoundKey R3: {state}")
+def string_to_blocks(s):
+    blocks = []
+    s_bytes = s.encode('utf-8')
+    if len(s_bytes) % 2 != 0:
+        s_bytes += b'\x00'  # Padding kalau ganjil
+    for i in range(0, len(s_bytes), 2):
+        block = (s_bytes[i] << 8) + s_bytes[i+1]
+        blocks.append(block)
+    return blocks
 
-    ciphertext = nibbles_to_int(state)
-    logs.append(f"Final Ciphertext (Hex): {hex(ciphertext)}")
+def blocks_to_string(blocks):
+    s = b''
+    for block in blocks:
+        s += bytes([(block >> 8) & 0xFF, block & 0xFF])
+    return s.rstrip(b'\x00').decode('utf-8')
 
-    return ciphertext, logs
+def hex_to_blocks(hex_string):
+    hex_string = hex_string.replace(" ", "")
+    if len(hex_string) % 4 != 0:
+        raise ValueError("Ciphertext hex length must be multiple of 4")
+    blocks = []
+    for i in range(0, len(hex_string), 4):
+        blocks.append(int(hex_string[i:i+4], 16))
+    return blocks
 
-def mini_aes_ecb_encrypt(plaintext_blocks, key_int):
-    ciphertext_blocks = []
-    all_logs = []
-    for idx, block in enumerate(plaintext_blocks):
-        ciphertext, logs = mini_aes_encrypt(block, key_int)
-        ciphertext_blocks.append(ciphertext)
-        all_logs.append((idx, logs))
-    return ciphertext_blocks, all_logs
+def blocks_to_hex(blocks):
+    return ''.join(f'{block:04X}' for block in blocks)
 
-def mini_aes_cbc_encrypt(plaintext_blocks, key_int, iv):
-    ciphertext_blocks = []
-    all_logs = []
-    previous = iv
-    for idx, block in enumerate(plaintext_blocks):
-        block ^= previous
-        ciphertext, logs = mini_aes_encrypt(block, key_int)
-        ciphertext_blocks.append(ciphertext)
-        all_logs.append((idx, logs))
-        previous = ciphertext
-    return ciphertext_blocks, all_logs
+def xor_blocks(b1, b2):
+    return b1 ^ b2
 
-def generate_txt(plaintext, key, ciphertext, logs):
-    output = io.StringIO()
-    output.write(f"Plaintext: {bin(plaintext)[2:].zfill(16)}\n")
-    output.write(f"Key: {bin(key)[2:].zfill(16)}\n")
-    output.write(f"Ciphertext: {hex(ciphertext)}\n")
-    output.write("Logs:\n")
-    for log in logs:
-        output.write(log + "\n")
-    return output.getvalue()
+def generate_iv():
+    return secrets.randbelow(0x10000) 
 
-def generate_txt_blocks(plaintexts, key, ciphertexts, logs_per_block):
-    output = io.StringIO()
-    for i, (pt, ct, logs) in enumerate(zip(plaintexts, ciphertexts, logs_per_block)):
-        output.write(f"Block {i+1}:\n")
-        output.write(f"Plaintext: {bin(pt)[2:].zfill(16)}\n")
-        output.write(f"Key: {bin(key)[2:].zfill(16)}\n")
-        output.write(f"Ciphertext: {hex(ct)}\n")
-        output.write("Logs:\n")
-        for log in logs:
-            output.write(log + "\n")
-        output.write("\n")
-    return output.getvalue()
+def save_to_txt(content, filename="output.txt"):
+    return io.BytesIO(content.encode('utf-8'))
 
-def generate_csv(plaintext, key, ciphertext, logs):
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['Plaintext', 'Key', 'Ciphertext'])
-    writer.writerow([bin(plaintext)[2:].zfill(16), bin(key)[2:].zfill(16), hex(ciphertext)])
-    writer.writerow(['Logs'])
-    for log in logs:
-        writer.writerow([log])
-    return output.getvalue()
+# --- STREAMLIT APP ---
 
-def generate_csv_blocks(plaintexts, key, ciphertexts, logs_per_block):
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['Block', 'Plaintext', 'Key', 'Ciphertext'])
-    for i, (pt, ct) in enumerate(zip(plaintexts, ciphertexts)):
-        writer.writerow([f'Block {i+1}', bin(pt)[2:].zfill(16), bin(key)[2:].zfill(16), hex(ct)])
-        writer.writerow(['Logs'])
-        for log in logs_per_block[i]:
-            writer.writerow([log])
-    return output.getvalue()
+st.title("Mini-AES 16-bit Encryption/Decryption (Text Mode) with ECB/CBC")
 
-def load_from_txt(filename):
-    with open(filename, 'r') as f:
-        return f.read()
+mode = st.selectbox("Select Mode:", ["Encrypt", "Decrypt"])
+cipher_mode = st.selectbox("Cipher Mode:", ["ECB", "CBC"])
+key_input = st.text_input("Key (4 characters):")
 
-def load_from_csv(filename):
-    with open(filename, 'r') as f:
-        return f.read()
+# Input untuk IV hanya jika mode CBC
+iv_input = None
+if cipher_mode == "CBC":
+    iv_input = st.text_input("IV (4 hex characters, optional):", "")
 
-# --- STREAMLIT GUI ---
-st.title("Mini-AES 16-bit Encryption")
+input_method = st.radio("Input Method:", ["Manual Input", "Upload from File"])
+plaintext_input = ""
+ciphertext_input = ""
 
-mode = st.selectbox("Select Encryption Mode:", ("Single Block", "ECB", "CBC"))
-plaintext_input = st.text_input("Enter Plaintext (binary, multiples of 16 bits, e.g., 1101011100101000):")
-key_input = st.text_input("Enter Key (16-bit binary, e.g., 0100101011110101):")
-iv_input = ""
-if mode == "CBC":
-    iv_input = st.text_input("Enter IV (16-bit binary for CBC mode):")
-
-output_ciphertexts = []
-output_logs = []
-output_plaintext = None
-output_key = None
-
-if st.button("Encrypt"):
-    try:
-        if len(key_input) != 16:
-            st.error("Key must be exactly 16 bits long!")
-        elif mode == "CBC" and len(iv_input) != 16:
-            st.error("IV must be exactly 16 bits long!")
+if input_method == "Manual Input":
+    if mode == "Encrypt":
+        plaintext_input = st.text_area("Plaintext (text) for Encrypt:")
+    else:
+        ciphertext_input = st.text_area("Ciphertext (hex) for Decrypt:")
+else:
+    uploaded_file = st.file_uploader("Upload your TXT file:", type=["txt"])
+    if uploaded_file:
+        file_content = uploaded_file.read().decode("utf-8")
+        if mode == "Encrypt":
+            plaintext_input = file_content.strip()
         else:
-            key = int(key_input, 2)
-            plaintext_blocks = [int(plaintext_input[i:i+16], 2) for i in range(0, len(plaintext_input), 16)]
-            output_plaintext = plaintext_blocks[0] if len(plaintext_blocks) == 1 else 0
-            output_key = key
+            ciphertext_input = file_content.strip()
 
-            if mode == "Single Block":
-                if len(plaintext_blocks) != 1:
-                    st.error("Single Block mode requires exactly one 16-bit block!")
+if st.button("Process"):
+    try:
+        if len(key_input) != 4:
+            st.error("Key must be exactly 4 characters!")
+        else:
+            key_int = (ord(key_input[0]) << 8) + ord(key_input[1])
+            output_text = ""
+
+            # Handle IV input or generate it randomly if CBC mode
+            iv = None
+            if cipher_mode == "CBC":
+                if iv_input:
+                    try:
+                        iv = int(iv_input, 16)
+                        if iv < 0 or iv > 0xFFFF:
+                            raise ValueError("IV must be a 4-digit hex value.")
+                    except ValueError:
+                        st.error("Invalid IV format. IV should be a 4-digit hex value.")
+                        
                 else:
-                    ciphertext, logs = mini_aes_encrypt(plaintext_blocks[0], key)
-                    output_ciphertexts = [ciphertext]
-                    output_logs = logs
-                    st.success(f"Ciphertext (hex): {hex(ciphertext)}")
-                    st.subheader("Encryption Steps:")
-                    for log in logs:
-                        st.text(log)
-            elif mode == "ECB":
-                ciphertext_blocks, all_logs = mini_aes_ecb_encrypt(plaintext_blocks, key)
-                output_ciphertexts = ciphertext_blocks
-                output_logs = [logs for _, logs in all_logs]
-                st.success(f"Ciphertext Blocks (hex): {[hex(c) for c in ciphertext_blocks]}")
-                for idx, logs in all_logs:
-                    st.subheader(f"Block {idx+1} Encryption Steps:")
-                    for log in logs:
-                        st.text(log)
-            elif mode == "CBC":
-                iv = int(iv_input, 2)
-                ciphertext_blocks, all_logs = mini_aes_cbc_encrypt(plaintext_blocks, key, iv)
-                output_ciphertexts = ciphertext_blocks
-                output_logs = [logs for _, logs in all_logs]
-                st.success(f"Ciphertext Blocks (hex): {[hex(c) for c in ciphertext_blocks]}")
-                for idx, logs in all_logs:
-                    st.subheader(f"Block {idx+1} Encryption Steps:")
-                    for log in logs:
-                        st.text(log)
+                    iv = generate_iv()
+
+            if mode == "Encrypt":
+                if not plaintext_input:
+                    st.error("Please input plaintext.")
+                else:
+                    blocks = string_to_blocks(plaintext_input)
+                    cipher_blocks = []
+                    
+                    if cipher_mode == "ECB":
+                        for block in blocks:
+                            cipher_blocks.append(mini_aes_encrypt_block(block, key_int))
+                    elif cipher_mode == "CBC":
+                        prev_block = iv
+                        for block in blocks:
+                            block = xor_blocks(block, prev_block)
+                            enc_block = mini_aes_encrypt_block(block, key_int)
+                            cipher_blocks.append(enc_block)
+                            prev_block = enc_block
+                        cipher_blocks.insert(0, iv)  # prepend IV to ciphertext
+
+                    cipher_hex = blocks_to_hex(cipher_blocks)
+                    st.success(f"Ciphertext (hex): {cipher_hex}")
+
+                    output_text = cipher_hex
+
+            elif mode == "Decrypt":
+                if not ciphertext_input:
+                    st.error("Please input ciphertext.")
+                else:
+                    blocks = hex_to_blocks(ciphertext_input)
+
+                    if cipher_mode == "CBC":
+                        iv = blocks[0]
+                        blocks = blocks[1:]
+
+                    plain_blocks = []
+                    if cipher_mode == "ECB":
+                        for block in blocks:
+                            plain_blocks.append(mini_aes_decrypt_block(block, key_int))
+                    elif cipher_mode == "CBC":
+                        prev_block = iv
+                        for block in blocks:
+                            dec_block = mini_aes_decrypt_block(block, key_int)
+                            plain_block = xor_blocks(dec_block, prev_block)
+                            plain_blocks.append(plain_block)
+                            prev_block = block
+
+                    plain_text = blocks_to_string(plain_blocks)
+                    st.success(f"Plaintext (text): {plain_text}")
+
+                    output_text = plain_text
+
+            # Export Result
+            st.download_button(
+                label="Download Result as TXT",
+                data=save_to_txt(output_text),
+                file_name="result.txt",
+                mime="text/plain"
+            )
+
     except Exception as e:
         st.error(f"Error: {e}")
-
-if output_ciphertexts:
-    st.subheader("Download the Result")
-    if mode == "Single Block":
-        txt_data = generate_txt(output_plaintext or 0, output_key or 0, output_ciphertexts[0], output_logs)
-        csv_data = generate_csv(output_plaintext or 0, output_key or 0, output_ciphertexts[0], output_logs)
-    else:
-        txt_data = generate_txt_blocks(plaintext_blocks, output_key, output_ciphertexts, output_logs)
-        csv_data = generate_csv_blocks(plaintext_blocks, output_key, output_ciphertexts, output_logs)
-
-    st.download_button(
-        label="Download TXT File",
-        data=txt_data,
-        file_name="mini_aes_result.txt",
-        mime="text/plain"
-    )
-
-    st.download_button(
-        label="Download CSV File",
-        data=csv_data,
-        file_name="mini_aes_result.csv",
-        mime="text/csv"
-    )
-
-st.subheader("Load Existing Result")
-load_filename = st.text_input("Filename to Load:", value="result.txt")
-if st.button("Load from TXT"):
-    content = load_from_txt(load_filename)
-    st.code(content)
-if st.button("Load from CSV"):
-    content = load_from_csv(load_filename)
-    st.code(content)
