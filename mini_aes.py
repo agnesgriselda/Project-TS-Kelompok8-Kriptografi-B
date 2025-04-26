@@ -1,4 +1,4 @@
-# mini_aes_interactive.py
+import streamlit as st
 
 S_BOX = {
     0x0: 0xE, 0x1: 0x4, 0x2: 0xD, 0x3: 0x1,
@@ -6,8 +6,6 @@ S_BOX = {
     0x8: 0x3, 0x9: 0xA, 0xA: 0x6, 0xB: 0xC,
     0xC: 0x5, 0xD: 0x9, 0xE: 0x0, 0xF: 0x7
 }
-
-INV_S_BOX = {v: k for k, v in S_BOX.items()}
 
 def int_to_nibbles(val):
     return [(val >> 12) & 0xF, (val >> 8) & 0xF, (val >> 4) & 0xF, val & 0xF]
@@ -57,53 +55,71 @@ def key_expansion(key):
     return [
         [w[0], w[1], w[0], w[1]],
         [w[2], w[3], w[2], w[3]],
-        [w[4], w[5], w[4], w[5]]
+        [w[4], w[5], w[4], w[5]],
+        [w[4], w[5], w[4], w[5]]  # Copy last key for final AddRoundKey
     ]
 
 def mini_aes_encrypt(plain_int, key_int):
-    print(f"\n[ENKRIPSI] Plaintext: {bin(plain_int)[2:].zfill(16)}, Key: {bin(key_int)[2:].zfill(16)}")
-
+    logs = []
     state = int_to_nibbles(plain_int)
     round_keys = key_expansion(key_int)
 
-    print(f"Initial State: {state}")
+    logs.append(f"Initial State: {state}")
 
     state = add_round_key(state, round_keys[0])
-    print(f"After Round 0 (AddRoundKey): {state}")
+    logs.append(f"After Round 0 (AddRoundKey): {state}")
 
+    # Round 1
     state = sub_nibbles(state)
-    print(f"After SubNibbles R1: {state}")
+    logs.append(f"After SubNibbles R1: {state}")
     state = shift_rows(state)
-    print(f"After ShiftRows R1: {state}")
+    logs.append(f"After ShiftRows R1: {state}")
     state = mix_columns(state)
-    print(f"After MixColumns R1: {state}")
+    logs.append(f"After MixColumns R1: {state}")
     state = add_round_key(state, round_keys[1])
-    print(f"After AddRoundKey R1: {state}")
+    logs.append(f"After AddRoundKey R1: {state}")
 
+    # Round 2
     state = sub_nibbles(state)
-    print(f"After SubNibbles R2: {state}")
+    logs.append(f"After SubNibbles R2: {state}")
     state = shift_rows(state)
-    print(f"After ShiftRows R2: {state}")
+    logs.append(f"After ShiftRows R2: {state}")
+    state = mix_columns(state)
+    logs.append(f"After MixColumns R2: {state}")
     state = add_round_key(state, round_keys[2])
-    print(f"After AddRoundKey R2: {state}")
+    logs.append(f"After AddRoundKey R2: {state}")
+
+    # Round 3 (final round)
+    state = sub_nibbles(state)
+    logs.append(f"After SubNibbles R3: {state}")
+    state = shift_rows(state)
+    logs.append(f"After ShiftRows R3: {state}")
+    state = add_round_key(state, round_keys[3])
+    logs.append(f"After AddRoundKey R3: {state}")
 
     ciphertext = nibbles_to_int(state)
-    print(f"\nFinal Ciphertext (16-bit): {bin(ciphertext)[2:].zfill(16)}")
-    print(f"Final Ciphertext (Hex)    : {hex(ciphertext)}")
-    return ciphertext
+    logs.append(f"Final Ciphertext (Hex): {hex(ciphertext)}")
 
-if __name__ == "__main__":
-    print("=== MINI AES 16-BIT ENKRIPSI ===")
+    return ciphertext, logs
+
+# STREAMLIT GUI
+st.title("Mini-AES 16-bit Encryption")
+st.write("This app encrypts a 16-bit plaintext using Mini-AES!")
+
+plaintext_input = st.text_input("Enter Plaintext")
+key_input = st.text_input("Enter Key")
+
+if st.button("Encrypt"):
     try:
-        pt_input = input("Masukkan Plaintext (16-bit dalam format biner, contoh: 1101011100101000): ")
-        key_input = input("Masukkan Key (16-bit dalam format biner, contoh: 0100101011110101): ")
-        
-        # Ubah ke integer
-        plaintext = int(pt_input, 2)
-        key = int(key_input, 2)
-        
-        mini_aes_encrypt(plaintext, key)
-
+        if len(plaintext_input) != 16 or len(key_input) != 16:
+            st.error("Plaintext and Key must each be exactly 16 bits long!")
+        else:
+            plaintext = int(plaintext_input, 2)
+            key = int(key_input, 2)
+            ciphertext, logs = mini_aes_encrypt(plaintext, key)
+            st.success(f"Ciphertext (hex): {hex(ciphertext)}")
+            st.subheader("Encryption Steps:")
+            for log in logs:
+                st.text(log)
     except Exception as e:
-        print("Terjadi kesalahan input. Pastikan format biner 16-bit benar.")
-        print("Error:", e)
+        st.error(f"Error: {e}")
