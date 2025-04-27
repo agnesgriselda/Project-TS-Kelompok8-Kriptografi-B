@@ -61,7 +61,7 @@ Hanya:
 
 - Program selesai.
 
-## _Implementasi Program_
+## _Implementasi Operasi Dasar AES_
 
 #### SubNibbles
 
@@ -104,3 +104,36 @@ _Round 1: Full (SubNibbles, ShiftRows, MixColumns, AddRoundKey)_
 _Round 2: Full (SubNibbles, ShiftRows, MixColumns, AddRoundKey)_
 
 _R_ound 3: Tidak pakai MixColumns (hanya SubNibbles, ShiftRows, AddRoundKey)._
+
+## _Implementasi Program_
+<img width="1428" alt="Screenshot 2025-04-27 at 16 59 01" src="https://github.com/user-attachments/assets/b668abf7-32e3-4d41-a3df-af23fb8288ac" />
+Program ini diimplementasikan sebagai aplikasi web menggunakan Streamlit, sehingga pengguna dapat melakukan enkripsi dan dekripsi secara interaktif. Di aplikasi web, pengguna bisa memilih mode operasi: Encrypt atau Decrypt, serta metode cipher: ECB (Electronic Codebook) atau CBC (Cipher Block Chaining).
+
+#### Input Data
+- Input plaintext dan key bisa diberikan secara manual atau melalui file .txt.
+- Key harus terdiri dari 4 karakter (karena Mini-AES 16-bit menggunakan 16-bit key).
+- Untuk mode CBC, pengguna juga bisa memasukkan IV (Initialization Vector) secara manual dalam format heksadesimal atau membiarkannya di-generate secara otomatis.
+
+#### Proses Enkripsi
+<img width="1439" alt="Screenshot 2025-04-27 at 17 00 21" src="https://github.com/user-attachments/assets/35f2a134-0f7c-46f3-9066-b7b44758d49c" />
+
+Plaintext diubah menjadi blok-blok 16-bit, kemudian setiap blok diproses:
+- ECB Mode: Setiap blok dienkripsi langsung secara independen menggunakan Mini-AES.
+- CBC Mode: Blok pertama di-XOR dengan IV, kemudian hasilnya dienkripsi. Blok berikutnya di-XOR dengan ciphertext sebelumnya sebelum dienkripsi. IV ditambahkan sebagai blok pertama ciphertext.
+Proses enkripsi setiap blok ditampilkan secara detail dalam log proses, termasuk hasil setelah setiap tahap (AddRoundKey, SubNibbles, ShiftRows, MixColumns).
+<img width="1422" alt="Screenshot 2025-04-27 at 17 00 37" src="https://github.com/user-attachments/assets/9f8f2a5f-fefa-47d4-8f8e-3c79eb55bc53" />
+
+#### Proses Dekripsi
+<img width="1428" alt="Screenshot 2025-04-27 at 17 01 05" src="https://github.com/user-attachments/assets/5ce5ee93-72d9-4db3-90fd-60fbcbacc9bd" />
+
+- Ciphertext (dalam format heksadesimal) dibagi ke dalam blok-blok 16-bit.
+- Setiap blok didekripsi sesuai mode:
+  - ECB Mode: Tiap blok didekripsi langsung.
+  - CBC Mode: Blok pertama dianggap sebagai IV, lalu dekripsi dilakukan dengan membalik proses CBC (menggunakan XOR dengan blok sebelumnya).
+- Output berupa teks plaintext hasil dekripsi.
+<img width="693" alt="Screenshot 2025-04-27 at 17 01 27" src="https://github.com/user-attachments/assets/683faec6-06a5-43e2-9162-54bed5e092d8" />
+
+#### Output
+- Hasil enkripsi atau dekripsi dapat di-download sebagai file .txt.
+- Aplikasi juga menampilkan detail log proses enkripsi agar pengguna dapat memahami setiap tahapan Mini-AES.
+<img width="740" alt="Screenshot 2025-04-27 at 17 04 10" src="https://github.com/user-attachments/assets/9e411af2-4d1e-4ec3-aba2-cebda2941545" />
