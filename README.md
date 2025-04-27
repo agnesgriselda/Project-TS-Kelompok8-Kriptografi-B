@@ -53,3 +53,45 @@ Hanya:
 - Program selesai.
 
 ## _Implementasi Program_
+
+#### SubNibbles
+
+- Menggunakan S-Box 4-bit, yang berarti tiap 4-bit input (nibble) diganti dengan value dari tabel substitusi.
+
+- Ini untuk memberikan efek confusion (membuat hubungan plaintext–ciphertext tidak mudah ditebak).
+
+#### ShiftRows
+
+- Data diatur dalam bentuk matriks 2×2.
+
+- Baris kedua digeser satu ke kiri.
+
+- Ini memberikan efek diffusion (menyebarkan perubahan satu bit input ke banyak bit output).
+
+#### MixColumns
+
+- Setiap kolom di matriks diencode ulang dengan operasi linear di GF(2⁴) (field bilangan biner 4-bit).
+
+- Menggunakan matriks sederhana seperti:
+
+```c
+[1 4]
+[4 1]
+```
+- lalu melakukan perkalian dan penjumlahan di GF(2⁴).
+
+- Ini memperkuat diffusion.
+
+#### AddRoundKey
+
+- Tiap ronde, hasil data di-XOR dengan kunci round yang sudah di-generate.
+
+- Ini bagian penting dari keamanan.
+
+#### *Jumlah Rounds*
+
+_Round 1: Full (SubNibbles, ShiftRows, MixColumns, AddRoundKey)_
+
+_Round 2: Full (SubNibbles, ShiftRows, MixColumns, AddRoundKey)_
+
+_R_ound 3: Tidak pakai MixColumns (hanya SubNibbles, ShiftRows, AddRoundKey)._
