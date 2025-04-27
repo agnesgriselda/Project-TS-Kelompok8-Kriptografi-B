@@ -137,3 +137,36 @@ Proses enkripsi setiap blok ditampilkan secara detail dalam log proses, termasuk
 - Hasil enkripsi atau dekripsi dapat di-download sebagai file .txt.
 - Aplikasi juga menampilkan detail log proses enkripsi agar pengguna dapat memahami setiap tahapan Mini-AES.
 <img width="740" alt="Screenshot 2025-04-27 at 17 04 10" src="https://github.com/user-attachments/assets/9e411af2-4d1e-4ec3-aba2-cebda2941545" />
+
+
+
+### Analisis Kelebihan dan Keterbatasan Mini-AES
+
+#### Kelebihan Mini-AES
+
+1. **Nilai Edukatif**: Mini-AES menyediakan model pembelajaran yang sangat baik untuk memahami struktur dasar dan operasi fundamental dari algoritma AES standar dengan kompleksitas yang lebih rendah.
+
+2. **Efisiensi Komputasi**: Dengan ukuran blok dan kunci yang hanya 16-bit (dibandingkan 128-bit pada AES standar), Mini-AES membutuhkan sumber daya komputasi yang jauh lebih sedikit, memungkinkan implementasi dan eksekusi yang lebih cepat.
+
+3. **Transparansi Operasi**: Struktur yang sederhana memungkinkan visualisasi dan penelusuran setiap langkah transformasi dengan lebih mudah, ideal untuk keperluan pendidikan dan debugging.
+
+4. **Mempertahankan Konsep Dasar AES**: Meskipun disederhanakan, Mini-AES mempertahankan empat operasi dasar AES (SubBytes/SubNibbles, ShiftRows, MixColumns, AddRoundKey), memberikan pemahaman konseptual yang akurat tentang algoritma asli.
+
+5. **Portabilitas**: Ukuran yang kecil dan persyaratan komputasi yang rendah memungkinkan implementasi pada berbagai platform, termasuk perangkat dengan sumber daya terbatas.
+   
+
+#### Keterbatasan Mini-AES
+
+1. **Keamanan Sangat Terbatas**: Dengan hanya menggunakan 16-bit untuk ukuran blok dan kunci, Mini-AES sangat rentan terhadap serangan brute force (hanya 2^16 = 65.536 kemungkinan kunci), membuat algoritma ini sama sekali tidak aman untuk penggunaan praktis.
+
+2. **Pengurangan Difusi dan Konfusi**: MixColumns dan ShiftRows yang disederhanakan pada Mini-AES menghasilkan difusi yang lebih lemah dibandingkan AES standar, mengurangi efektivitas scrambling data.
+
+3. **S-Box Sederhana**: S-Box 4-bit pada Mini-AES tidak memiliki sifat matematika yang sama kuatnya seperti S-Box 8-bit pada AES standar, yang mengurangi resistansi terhadap analisis kriptanalitik.
+
+4. **Jumlah Ronde Terbatas**: Dengan hanya 3 ronde (dibandingkan 10-14 ronde pada AES standar), Mini-AES memberikan margin keamanan yang sangat kecil, membuatnya sangat rentan terhadap serangan diferensial dan linear.
+
+5. **Ruang Status Kecil**: Ruang status 16-bit sangat terbatas, memungkinkan pemetaan lengkap dari semua kemungkinan plaintext ke ciphertext, yang bisa digunakan untuk serangan berbasis tabel lookup.
+
+6. **Tidak Cocok untuk Data Nyata**: Ukuran blok 16-bit terlalu kecil untuk mayoritas aplikasi data praktis, membuat algoritma ini murni untuk tujuan pendidikan.
+
+7. **Ketahanan Avalanche Lebih Lemah**: Perubahan satu bit pada input mungkin tidak menyebar secara efektif ke seluruh ciphertext seperti pada AES standar karena jumlah operasi yang lebih sedikit dan ukuran data yang lebih kecil.
