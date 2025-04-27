@@ -9,6 +9,36 @@
 | Aisha Ayya Ratiandari  | 5027231056 |
 | Aisyah Rahmasari | 5027231072 |
 
+## _Spesifikasi Algoritma_
+
+Mini-AES adalah versi sederhana dari algoritma Advanced Encryption Standard (AES) yang dirancang untuk keperluan edukasi dan pembelajaran.
+Implementasi Mini-AES yang kami buat menggunakan ukuran blok 16-bit dan kunci 16-bit, sehingga lebih ringan namun tetap mempertahankan struktur utama AES.
+
+#### Ukuran Data
+- Plaintext: 16-bit (4 nibbles)
+- Key: 16-bit (4 nibbles)
+
+### Operasi Dasar yang Digunakan
+- SubNibbles:
+  Substitusi setiap 4-bit (nibble) menggunakan tabel S-Box 4-bit untuk menambah confusion.
+- ShiftRows:
+  Menggeser baris kedua dari matriks 2x2 satu posisi ke kiri untuk menambah diffusion.
+- MixColumns:
+  Operasi linear menggunakan matriks [1 4; 4 1] di GF(2⁴) untuk memperkuat diffusion di setiap kolom.
+- AddRoundKey:
+  Setiap ronde, state di-XOR dengan round key untuk meningkatkan keamanan.
+
+### Key Expansion
+- Key 16-bit diperluas menjadi empat round keys.
+- Proses key expansion sederhana, menggunakan S-Box dan operasi XOR antar nibbles.
+
+### Mode Operasi Blok
+Implementasi Mini-AES kami mendukung dua mode operasi:
+- ECB (Electronic Codebook):
+  Setiap blok dienkripsi secara independen.
+- CBC (Cipher Block Chaining):
+  Setiap blok plaintext di-XOR dengan ciphertext blok sebelumnya sebelum dienkripsi, menggunakan Initialization Vector (IV) untuk blok pertama.
+
 ## _Alur Flowchart_
 ![flowchart](https://github.com/user-attachments/assets/1c8e34bb-5d7f-45bd-b377-1713ae96501b)
 
