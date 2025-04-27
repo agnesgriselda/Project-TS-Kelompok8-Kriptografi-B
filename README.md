@@ -168,7 +168,96 @@ Proses enkripsi setiap blok ditampilkan secara detail dalam log proses, termasuk
 - Aplikasi juga menampilkan detail log proses enkripsi agar pengguna dapat memahami setiap tahapan Mini-AES.
 <img width="740" alt="Screenshot 2025-04-27 at 17 04 10" src="https://github.com/user-attachments/assets/9e411af2-4d1e-4ec3-aba2-cebda2941545" />
 
+## Test Case
+### Test Case: Enkripsi dengan Mode ECB
 
+#### **Input:**
+- **Mode Enkripsi**: Encrypt
+- **Cipher Mode**: ECB
+- **Key (4 karakter)**: `1234`
+- **Plaintext (text for Encryption)**: `Hello12345678`
+
+#### **Expected Output:**
+- **Ciphertext (hex)**: `1E17B2F6B681FC65088659A9E073`
+
+#### **Penjelasan**:
+Test case ini menguji enkripsi dengan mode **ECB** (Electronic Codebook) pada plaintext `"Hello12345678"`. Dengan menggunakan **key** `"1234"`, proses enkripsi menghasilkan ciphertext yang sesuai: `1E17B2F6B681FC65088659A9E073`.
+
+#### **Dokumentasi**:
+![WhatsApp Image 2025-04-27 at 20 48 13_4d753684](https://github.com/user-attachments/assets/3c94edff-339c-450a-a71c-77cb53ae86a8)
+
+![WhatsApp Image 2025-04-27 at 20 49 06_e95f88de](https://github.com/user-attachments/assets/68f21df0-64fc-4964-8e9c-f08adc42b339)
+
+![WhatsApp Image 2025-04-27 at 21 11 57_f7229ed4](https://github.com/user-attachments/assets/d6c89750-8956-4dd6-b4bb-f4b198a778eb)
+
+### **Output**:
+- **Ciphertext (hex)**: `1E17B2F6B681FC65088659A9E073`
+- **Encryption steps detail** will be shown after running the process.
+
+---
+
+### Test Case: Enkripsi dengan Mode CBC
+
+#### **Input:**
+- **Mode Enkripsi**: Encrypt
+- **Cipher Mode**: CBC
+- **Key**: `abcd` (4 karakter)
+- **IV (Initialization Vector)**: (Opsional)
+- **Plaintext (text for Encryption)**: `TestEncryption!`
+
+#### **Expected Output:**
+- **Ciphertext (hex)**: `DD30C78353A0066C82CB71D15E93A416C1D6`
+
+#### Dokumentasi
+![WhatsApp Image 2025-04-27 at 20 50 37_59317f65](https://github.com/user-attachments/assets/4ee8a581-9233-427a-95ab-c70a6aa29efb)
+
+![image](https://github.com/user-attachments/assets/2725ba16-a30d-433d-a6ad-f8794649f394)
+
+![image](https://github.com/user-attachments/assets/48bb755c-7e5f-44af-a377-a24a7d68e096)
+
+### **Penjelasan:**
+Test case ini menguji enkripsi dengan mode **CBC (Cipher Block Chaining)** menggunakan **key** `"abcd"` dan **plaintext** `"TestEncryption!"`. Hasil enkripsi menghasilkan ciphertext yang sesuai: `DD30C78353A0066C82CB71D15E93A416C1D6`.
+
+### Test Case - Decryption (Mini-AES 16-bit)
+
+Berikut dokumentasi pengujian fitur **dekripsi** pada Mini-AES 16-bit Encryption/Decryption dengan mode **ECB** dan **CBC**.
+
+#### 1. Dekripsi Menggunakan ECB Mode
+
+- Mode: Decrypt
+- Cipher Mode: ECB
+- Key: `TEST`
+- Input Method: Manual Input
+- Ciphertext (hex): `FB3A9D57526D6BCFA80BD504`
+- Hasil Dekripsi: `KRIPTOGRAFI`
+
+#### Dokumentasi
+![WhatsApp Image 2025-04-27 at 21 08 16_7ea0baee](https://github.com/user-attachments/assets/1107768d-513d-4bd3-876b-14f6f42d560d)
+
+#### Penjelasan:  
+Pada mode **ECB (Electronic Codebook)**, setiap blok plaintext dienkripsi dan didekripsi secara independen.  
+Kunci yang digunakan adalah `"TEST"`. Setelah proses dekripsi, ciphertext berhasil dikembalikan menjadi plaintext **KRIPTOGRAFI**.
+
+---
+
+### 2. Dekripsi Menggunakan CBC Mode
+
+- Mode: Decrypt
+- Cipher Mode: CBC
+- Key: `TEST`
+- IV: `ABCD`
+- Input Method: Manual Input
+- Ciphertext (hex): `ABCDD51EC507C992325188C5CAF6`
+- Hasil Dekripsi: `KRIPTOGRAFI`
+
+#### Dokumentasi
+![WhatsApp Image 2025-04-27 at 21 10 19_b5dbd877](https://github.com/user-attachments/assets/787fb0b7-604f-47f0-97f5-81dcda5fe4b5)
+
+##### Penjelasan:  
+Pada mode **CBC (Cipher Block Chaining)**, setiap blok ciphertext bergantung pada hasil ciphertext blok sebelumnya menggunakan operasi XOR.  
+Dekripsi menggunakan kunci `"TEST"` dan IV `"ABCD"`. Hasil dekripsi menghasilkan plaintext **KRIPTOGRAFI**.
+
+---
 
 ### Analisis Kelebihan dan Keterbatasan Mini-AES
 
