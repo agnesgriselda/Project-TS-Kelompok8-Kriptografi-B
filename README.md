@@ -1,5 +1,14 @@
 # Project-TS-Kelompok8-Kriptografi-B
 
+## Anggota Kelompok
+| Nama  | NRP  |
+|----------|----------|
+| Aswalia Novitriasari  | 5027231012 |
+| Agnes Zenobia Griselda P  | 5027231034 |
+| Nayla Raissa Azzahra  | 5027231054 |
+| Aisha Ayya Ratiandari  | 5027231056 |
+| Aisyah Rahmasari | 5027231072 |
+
 ## _Alur Flowchart_
 ![flowchart](https://github.com/user-attachments/assets/1c8e34bb-5d7f-45bd-b377-1713ae96501b)
 
