@@ -2,8 +2,6 @@ import streamlit as st
 import io
 import secrets
 
-# --- MINI-AES FUNCTION (enkripsi dari kode kamu sebelumnya) ---
-
 S_BOX = {
     0x0: 0xE, 0x1: 0x4, 0x2: 0xD, 0x3: 0x1,
     0x4: 0x2, 0x5: 0xF, 0x6: 0xB, 0x7: 0x8,
@@ -80,25 +78,47 @@ def key_expansion(key):
         [w[4], w[5], w[4], w[5]]
     ]
 
-def mini_aes_encrypt_block(plain_int, key_int):
+def mini_aes_encrypt_block(plain_int, key_int, process_log):
     state = int_to_nibbles(plain_int)
     round_keys = key_expansion(key_int)
 
+    process_log.append(f"Initial State: {state}")
+
     state = add_round_key(state, round_keys[0])
+    process_log.append(f"After AddRoundKey 0: {state}")
 
     state = sub_nibbles(state)
+    process_log.append(f"After SubNibbles: {state}")
+
     state = shift_rows(state)
+    process_log.append(f"After ShiftRows: {state}")
+
     state = mix_columns(state)
+    process_log.append(f"After MixColumns: {state}")
+
     state = add_round_key(state, round_keys[1])
+    process_log.append(f"After AddRoundKey 1: {state}")
 
     state = sub_nibbles(state)
+    process_log.append(f"After SubNibbles: {state}")
+
     state = shift_rows(state)
+    process_log.append(f"After ShiftRows: {state}")
+
     state = mix_columns(state)
+    process_log.append(f"After MixColumns: {state}")
+
     state = add_round_key(state, round_keys[2])
+    process_log.append(f"After AddRoundKey 2: {state}")
 
     state = sub_nibbles(state)
+    process_log.append(f"After SubNibbles: {state}")
+
     state = shift_rows(state)
+    process_log.append(f"After ShiftRows: {state}")
+
     state = add_round_key(state, round_keys[3])
+    process_log.append(f"After AddRoundKey 3: {state}")
 
     return nibbles_to_int(state)
 
@@ -201,8 +221,8 @@ if st.button("Process"):
         else:
             key_int = (ord(key_input[0]) << 8) + ord(key_input[1])
             output_text = ""
+            process_log = []
 
-            # Handle IV input or generate it randomly if CBC mode
             iv = None
             if cipher_mode == "CBC":
                 if iv_input:
@@ -212,7 +232,6 @@ if st.button("Process"):
                             raise ValueError("IV must be a 4-digit hex value.")
                     except ValueError:
                         st.error("Invalid IV format. IV should be a 4-digit hex value.")
-                        
                 else:
                     iv = generate_iv()
 
@@ -222,23 +241,23 @@ if st.button("Process"):
                 else:
                     blocks = string_to_blocks(plaintext_input)
                     cipher_blocks = []
-                    
+
                     if cipher_mode == "ECB":
                         for block in blocks:
-                            cipher_blocks.append(mini_aes_encrypt_block(block, key_int))
+                            cipher_blocks.append(mini_aes_encrypt_block(block, key_int, process_log))
                     elif cipher_mode == "CBC":
                         prev_block = iv
                         for block in blocks:
                             block = xor_blocks(block, prev_block)
-                            enc_block = mini_aes_encrypt_block(block, key_int)
+                            enc_block = mini_aes_encrypt_block(block, key_int, process_log)
                             cipher_blocks.append(enc_block)
                             prev_block = enc_block
-                        cipher_blocks.insert(0, iv)  # prepend IV to ciphertext
+                        cipher_blocks.insert(0, iv)
 
                     cipher_hex = blocks_to_hex(cipher_blocks)
                     st.success(f"Ciphertext (hex): {cipher_hex}")
-
-                    output_text = cipher_hex
+                    st.text_area("Encryption Steps Detail:", value="\n".join(process_log), height=400)
+                    output_text = f"--- Encryption Result ---\nPlaintext: {plaintext_input}\nKey: {key_input}\nCiphertext (hex): {cipher_hex}\n\n--- Process Log ---\n" + '\n'.join(process_log)
 
             elif mode == "Decrypt":
                 if not ciphertext_input:
@@ -265,9 +284,8 @@ if st.button("Process"):
                     plain_text = blocks_to_string(plain_blocks)
                     st.success(f"Plaintext (text): {plain_text}")
 
-                    output_text = plain_text
+                    output_text = f"--- Decryption Result ---\nCiphertext (hex): {ciphertext_input}\nPlaintext: {plain_text}"
 
-            # Export Result
             st.download_button(
                 label="Download Result as TXT",
                 data=save_to_txt(output_text),
