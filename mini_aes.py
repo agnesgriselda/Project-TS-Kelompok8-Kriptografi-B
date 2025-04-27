@@ -284,7 +284,7 @@ if st.button("Process"):
                     plain_text = blocks_to_string(plain_blocks)
                     st.success(f"Plaintext (text): {plain_text}")
 
-                    output_text = f"--- Decryption Result ---\nCiphertext (hex): {ciphertext_input}\nPlaintext: {plain_text}"
+                    output_text = f"--- Decryption Result ---\nCiphertext (hex): {ciphertext_input}\nKey: {key_input}\nPlaintext: {plain_text}"
 
             st.download_button(
                 label="Download Result as TXT",
