@@ -12,7 +12,7 @@
 ## _Spesifikasi Algoritma_
 
 Mini-AES adalah versi sederhana dari algoritma Advanced Encryption Standard (AES) yang dirancang untuk keperluan edukasi dan pembelajaran.
-Implementasi Mini-AES yang kami buat menggunakan ukuran blok 16-bit dan kunci 16-bit, sehingga lebih ringan namun tetap mempertahankan struktur utama AES.
+Implementasi Mini-AES yang kami buat menggunakan ukuran blok 16-bit dan kunci 16-bit, sehingga lebih ringan namun tetap mempertahankan struktur utama AES. Algoritma ini memungkinkan pemahaman yang lebih mudah mengenai cara kerja kriptografi dalam konteks yang lebih sederhana.
 
 #### Ukuran Data
 - Plaintext: 16-bit (4 nibbles)
